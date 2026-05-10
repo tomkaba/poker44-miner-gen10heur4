@@ -17,7 +17,7 @@ except ImportError:
 import bittensor as bt
 
 from poker44.base.miner import BaseMinerNeuron
-from poker44.miner_heuristics import get_chunk_scorer_startup_check, score_chunks_gen7heur4
+from poker44.miner_heuristics import get_chunk_scorer_startup_check, score_chunk_gen7heur1
 from poker44.utils.model_manifest import (
     build_local_model_manifest,
     evaluate_manifest_compliance,
@@ -139,7 +139,12 @@ class Miner(BaseMinerNeuron):
     async def forward(self, synapse: DetectionSynapse) -> DetectionSynapse:
         chunks: List[List[dict]] = synapse.chunks or []
 
-        scores, routes, _rebalance_stats = score_chunks_gen7heur4(chunks)
+        scores = []
+        routes = []
+        for chunk in chunks:
+            score, route = score_chunk_gen7heur1(chunk)
+            scores.append(float(score))
+            routes.append(route)
 
         chunk_sizes = [len(chunk or []) for chunk in chunks]
 
@@ -208,8 +213,8 @@ class Miner(BaseMinerNeuron):
         return allowed
 
     def score_chunk(self, chunk: list[dict]) -> float:
-        scores, _routes, _stats = score_chunks_gen7heur4([chunk])
-        return float(scores[0]) if scores else 0.5
+        score, _route = score_chunk_gen7heur1(chunk)
+        return float(score)
 
     async def blacklist(self, synapse: DetectionSynapse) -> Tuple[bool, str]:
         if synapse.dendrite is None or synapse.dendrite.hotkey is None:
